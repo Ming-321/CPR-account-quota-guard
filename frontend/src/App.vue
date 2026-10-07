@@ -22,12 +22,14 @@ const formError = ref('')
 const rows = computed(() => Object.entries(data.value?.guards || {}))
 const accounts = computed(() => (data.value?.accounts || []).map(a => ({
   value: a.account_id,
-  label: a.name || a.email || a.account_id,
+  label: a.name?.trim() || a.email?.trim() || a.account_id,
   disabled: !editing.value && !!data.value?.guards[a.account_id],
 })))
 const account = (id: string) => data.value?.accounts.find(a => a.account_id === id)
-const accountName = (id: string) => account(id)?.name?.trim() || account(id)?.email?.trim() || '账号已删除'
+const accountName = (id: string) => account(id)?.name?.trim() || account(id)?.email?.trim() || (account(id) ? '未命名账号' : '账号已删除')
 function accountEmail(id: string) {
+  if (!account(id)?.name?.trim())
+    return ''
   const email = account(id)?.email?.trim()
   return email && email.toLowerCase() !== accountName(id).toLowerCase() ? email : ''
 }
@@ -131,12 +133,32 @@ onMounted(() => refresh(false))
           </div>
         </div>
         <div class="cell" data-label="本周期阈值">
-          <div class="threshold-copy">
-            <div class="threshold-line">
-              <strong class="numeric">{{ row.guard.threshold == null ? '待确定' : `${row.guard.threshold}%` }}</strong><span class="mode-label">{{ row.guard.current.mode === 'fixed' ? '固定' : '随机' }}</span>
-            </div>
-            <small v-if="row.guard.current.mode === 'random'">区间 {{ row.guard.current.min }}%–{{ row.guard.current.max }}%</small>
-            <small v-if="pending(row)" class="pending-rule"><Clock3 :size="12" />下周期：{{ ruleText(row.guard.configured) }}</small>
+          <div class="threshold-line">
+            <strong class="numeric">{{ row.guard.threshold == null ? '待确定' : `${row.guard.threshold}%` }}</strong>
+            <BasePopover placement="bottom-end">
+              <template #trigger="{ open: ruleOpen }">
+                <BaseIconButton label="查看阈值规则" title="查看阈值规则" :aria-expanded="ruleOpen">
+                  <Info :size="16" />
+                </BaseIconButton>
+              </template>
+              <section class="quota-detail" aria-label="阈值规则">
+                <div class="detail-heading">
+                  本周期规则
+                </div>
+                <p class="detail-account">
+                  {{ accountName(id) }}
+                </p>
+                <dl>
+                  <dt>阈值模式</dt><dd>{{ row.guard.current.mode === 'fixed' ? '固定阈值' : '每周期随机' }}</dd>
+                  <template v-if="row.guard.current.mode === 'random'">
+                    <dt>随机区间</dt><dd>{{ row.guard.current.min }}%–{{ row.guard.current.max }}%</dd>
+                  </template>
+                </dl>
+                <p v-if="pending(row)" class="detail-reason">
+                  <Clock3 :size="14" />下周期：{{ ruleText(row.guard.configured) }}
+                </p>
+              </section>
+            </BasePopover>
           </div>
         </div>
         <div class="cell" data-label="保护状态">
@@ -157,7 +179,7 @@ onMounted(() => refresh(false))
                 <p class="detail-account">
                   {{ accountName(id) }}
                 </p>
-                <dl><dt>额度更新时间</dt><dd>{{ date(row.guard.latest?.observed) }}</dd><dt>预计重置时间</dt><dd>{{ date(row.guard.latest?.reset) }}</dd><dt>本周期规则</dt><dd>{{ ruleText(row.guard.current) }}</dd></dl>
+                <dl><dt>额度更新时间</dt><dd>{{ date(row.guard.latest?.observed) }}</dd><dt>预计重置时间</dt><dd>{{ date(row.guard.latest?.reset) }}</dd></dl>
                 <p v-if="row.reason" class="detail-reason">
                   <Clock3 :size="14" />{{ row.reason }}
                 </p>

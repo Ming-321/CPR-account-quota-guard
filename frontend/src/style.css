@@ -41,10 +41,7 @@ strong { font-weight: 600; }
 .quota-paused strong { color: var(--cp-color-error-text); }
 .quota-disabled .quota-fill { background: var(--cp-color-text-quaternary); }
 .quota-marker { position: absolute; top: -3px; bottom: -3px; width: 2px; transform: translateX(-1px); border-radius: 2px; background: var(--cp-color-text-secondary); box-shadow: 0 0 0 2px var(--cp-color-bg-container); }
-.threshold-line { gap: 9px; }
-.mode-label { color: var(--cp-color-text-secondary); background: var(--cp-color-fill-tertiary); padding: 1px 6px; border-radius: 4px; font-size: 11px; }
-.pending-rule { display: flex; align-items: center; gap: 5px; color: var(--cp-color-warning-text); }
-.pending-rule svg { flex-shrink: 0; }
+.threshold-line { gap: 4px; }
 .status-line { gap: 4px; }
 .quota-detail { width: min(330px, calc(100vw - 32px)); padding: 18px 20px; font-size: 12px; }
 .detail-heading { display: flex; justify-content: space-between; gap: 16px; font-weight: 600; font-size: 13px; }
@@ -89,6 +86,5 @@ strong { font-weight: 600; }
   .cell { display: grid; grid-template-columns: 100px minmax(0, 1fr); align-items: center; gap: 16px; }
   .cell::before { content: attr(data-label); color: var(--cp-color-text-secondary); font-size: 12px; }
   .quota { justify-self: end; width: min(100%, 170px); text-align: right; }
-  .threshold-copy { text-align: right; }
-  .threshold-line, .pending-rule, .status-line { justify-content: flex-end; }
+  .threshold-line, .status-line { justify-content: flex-end; }
 }
