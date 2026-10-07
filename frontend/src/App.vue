@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Row, Rule, Snapshot } from './api/modules/guard'
-import { BaseButton, BaseIconButton, BaseModal, BaseSelect, BaseSwitch, BaseTag } from '@codex-proxy/ui'
-import { Plus, RefreshCw, Settings } from '@lucide/vue'
+import { BaseButton, BaseIconButton, BaseModal, BasePopover, BaseSelect, BaseSwitch, BaseTag } from '@codex-proxy/ui'
+import { Clock3, Info, Plus, RefreshCw, Settings, ShieldCheck } from '@lucide/vue'
 import { computed, onMounted, ref } from 'vue'
 import { load, save } from './api/modules/guard'
 import { date, ruleError, ruleText } from './display'
@@ -26,6 +26,12 @@ const accounts = computed(() => (data.value?.accounts || []).map(a => ({
   disabled: !editing.value && !!data.value?.guards[a.account_id],
 })))
 const account = (id: string) => data.value?.accounts.find(a => a.account_id === id)
+const accountName = (id: string) => account(id)?.name?.trim() || account(id)?.email?.trim() || '账号已删除'
+function accountEmail(id: string) {
+  const email = account(id)?.email?.trim()
+  return email && email.toLowerCase() !== accountName(id).toLowerCase() ? email : ''
+}
+const remaining = (row: Row) => row.guard.latest ? Number((100 - row.guard.latest.used).toFixed(2)) : null
 const pending = (row: Row) => JSON.stringify(row.guard.configured) !== JSON.stringify(row.guard.current)
 const tone = (row: Row) => !row.guard.enabled ? 'neutral' : row.guard.blocked ? 'danger' : row.status === '等待额度数据' ? 'warning' : 'success'
 async function refresh(manual = true) {
@@ -75,7 +81,9 @@ onMounted(() => refresh(false))
 <template>
   <main>
     <div class="toolbar">
-      <span class="muted">{{ rows.length }} 个账号</span>
+      <div class="list-heading">
+        <ShieldCheck :size="18" /><span>{{ rows.length }} 个保护账号</span><span v-if="notice" role="status" class="notice">{{ notice }}</span>
+      </div>
       <div class="actions">
         <span class="tip-wrap">
           <BaseIconButton label="刷新列表" aria-describedby="refresh-tip" :disabled="busy" @click="refresh()">
@@ -94,9 +102,6 @@ onMounted(() => refresh(false))
     <p v-if="error" role="alert" class="error">
       {{ error }}
     </p>
-    <p v-if="notice" role="status" class="notice">
-      {{ notice }}
-    </p>
     <div v-if="!data && busy" class="empty">
       正在加载账号
     </div>
@@ -112,33 +117,53 @@ onMounted(() => refresh(false))
       </div>
       <div v-for="[id, row] in rows" :key="id" class="account-row">
         <div class="identity">
-          <strong>{{ account(id)?.name || '账号已删除' }}</strong>
-          <small>{{ account(id)?.email || id }}</small>
+          <strong>{{ accountName(id) }}</strong>
+          <small v-if="accountEmail(id)">{{ accountEmail(id) }}</small>
           <small v-if="account(id) && !account(id)?.enabled" class="warning">宿主已停用</small>
         </div>
         <div class="cell" data-label="周额度剩余">
-          <strong>{{ row.guard.latest ? `${Number((100 - row.guard.latest.used).toFixed(2))}%` : '暂无' }}</strong>
-          <progress v-if="row.guard.latest" :value="100 - row.guard.latest.used" max="100" aria-label="周额度剩余" />
+          <div class="quota" :class="{ 'quota-paused': row.guard.enabled && row.guard.blocked, 'quota-disabled': !row.guard.enabled }">
+            <strong class="numeric">{{ remaining(row) == null ? '暂无数据' : `${remaining(row)}%` }}</strong>
+            <div v-if="remaining(row) != null" class="quota-track" role="progressbar" aria-label="周额度剩余" :aria-valuenow="remaining(row)!" :aria-valuemin="0" :aria-valuemax="100" :aria-valuetext="`剩余 ${remaining(row)}%，保护阈值 ${row.guard.threshold ?? '待确定'}%`">
+              <span class="quota-fill" :style="{ width: `${remaining(row)}%` }" />
+              <span v-if="row.guard.threshold != null" class="quota-marker" :style="{ left: `${row.guard.threshold}%` }" :title="`保护阈值 ${row.guard.threshold}%`" />
+            </div>
+          </div>
         </div>
         <div class="cell" data-label="本周期阈值">
-          <strong>{{ row.guard.threshold == null ? '待确定' : `${row.guard.threshold}%` }}</strong>
-          <small>{{ ruleText(row.guard.current) }}</small>
-          <small v-if="pending(row)" class="warning">下周期：{{ ruleText(row.guard.configured) }}</small>
+          <div class="threshold-copy">
+            <div class="threshold-line">
+              <strong class="numeric">{{ row.guard.threshold == null ? '待确定' : `${row.guard.threshold}%` }}</strong><span class="mode-label">{{ row.guard.current.mode === 'fixed' ? '固定' : '随机' }}</span>
+            </div>
+            <small v-if="row.guard.current.mode === 'random'">区间 {{ row.guard.current.min }}%–{{ row.guard.current.max }}%</small>
+            <small v-if="pending(row)" class="pending-rule"><Clock3 :size="12" />下周期：{{ ruleText(row.guard.configured) }}</small>
+          </div>
         </div>
         <div class="cell" data-label="保护状态">
-          <BaseTag :type="tone(row)">
-            {{ row.status }}
-          </BaseTag>
-          <details>
-            <summary>详情</summary>
-            <div class="detail">
-              <p v-if="row.reason">
-                {{ row.reason }}
-              </p>
-              <p>额度观测：{{ date(row.guard.latest?.observed) }}</p>
-              <p>预计重置：{{ date(row.guard.latest?.reset) }}</p>
-            </div>
-          </details>
+          <div class="status-line">
+            <BaseTag :type="tone(row)" size="sm">
+              {{ row.status }}
+            </BaseTag>
+            <BasePopover placement="bottom-end">
+              <template #trigger="{ open: detailOpen }">
+                <BaseIconButton label="查看额度详情" title="查看额度详情" :aria-expanded="detailOpen">
+                  <Info :size="16" />
+                </BaseIconButton>
+              </template>
+              <section class="quota-detail" aria-label="额度详情">
+                <div class="detail-heading">
+                  <span>额度详情</span><span class="muted">本地时间</span>
+                </div>
+                <p class="detail-account">
+                  {{ accountName(id) }}
+                </p>
+                <dl><dt>额度更新时间</dt><dd>{{ date(row.guard.latest?.observed) }}</dd><dt>预计重置时间</dt><dd>{{ date(row.guard.latest?.reset) }}</dd><dt>本周期规则</dt><dd>{{ ruleText(row.guard.current) }}</dd></dl>
+                <p v-if="row.reason" class="detail-reason">
+                  <Clock3 :size="14" />{{ row.reason }}
+                </p>
+              </section>
+            </BasePopover>
+          </div>
         </div>
         <BaseIconButton label="设置账号保护" title="设置账号保护" :disabled="busy" @click="edit(id)">
           <Settings :size="17" />
@@ -148,14 +173,28 @@ onMounted(() => refresh(false))
   </main>
   <BaseModal v-model="open" :title="editing ? '账号保护设置' : '添加账号'" :dismissible="!busy" :draggable="false">
     <form class="form" @submit.prevent="submit">
-      <label>账号</label>
-      <BaseSelect v-model="accountId" :options="accounts" :disabled="editing || busy" placeholder="选择账号" />
-      <BaseSwitch v-model="enabled" label="启用保护" show-label :disabled="busy" />
-      <p v-if="!enabled" class="muted">
-        关闭后解除本插件的拦截，保留当前周期阈值
-      </p>
-      <label>阈值模式</label>
-      <BaseSelect v-model="mode" :options="[{ value: 'fixed', label: '固定阈值' }, { value: 'random', label: '每周期随机' }]" :disabled="busy" />
+      <div v-if="editing" class="edit-identity">
+        <span class="field-caption">保护账号</span><strong>{{ accountName(accountId) }}</strong><small v-if="accountEmail(accountId)">{{ accountEmail(accountId) }}</small>
+      </div>
+      <div v-else class="form-field">
+        <label>账号</label><BaseSelect v-model="accountId" :options="accounts" filterable :disabled="busy" placeholder="选择账号名称或邮箱" aria-label="账号" />
+      </div>
+      <div class="enable-row">
+        <div>
+          <span class="field-title">账号保护</span><p class="muted">
+            {{ enabled ? '低于阈值时拦截新请求' : '已解除拦截，保留当前周期阈值' }}
+          </p>
+        </div><BaseSwitch v-model="enabled" label="启用保护" :disabled="busy" />
+      </div>
+      <div class="form-field">
+        <label>阈值模式</label><div class="mode-picker" role="group" aria-label="阈值模式">
+          <button type="button" :aria-pressed="mode === 'fixed'" :disabled="busy" @click="mode = 'fixed'">
+            固定阈值
+          </button><button type="button" :aria-pressed="mode === 'random'" :disabled="busy" @click="mode = 'random'">
+            每周期随机
+          </button>
+        </div>
+      </div>
       <label v-if="mode === 'fixed'" class="field">剩余低于
         <span class="number"><input v-model.number="threshold" aria-label="固定阈值" type="number" min="1" max="100" step="1" :disabled="busy">%</span>
       </label>
@@ -163,10 +202,10 @@ onMounted(() => refresh(false))
         <label class="field">下限<span class="number"><input v-model.number="min" aria-label="随机下限" type="number" min="1" max="100" step="1" :disabled="busy">%</span></label>
         <label class="field">上限<span class="number"><input v-model.number="max" aria-label="随机上限" type="number" min="1" max="100" step="1" :disabled="busy">%</span></label>
       </div>
-      <p v-if="editing" class="muted">
+      <p v-if="editing" class="form-help">
         固定阈值修改立即生效，模式切换和随机区间修改在下个确认的周期生效
       </p>
-      <p v-else-if="mode === 'random'" class="muted">
+      <p v-else-if="mode === 'random'" class="form-help">
         每周期抽取一次，首次等待可识别的周额度周期
       </p>
       <p v-if="formError" role="alert" class="error">
