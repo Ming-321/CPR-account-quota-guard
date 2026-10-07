@@ -150,7 +150,7 @@ onMounted(() => refresh(false))
     <form class="form" @submit.prevent="submit">
       <label>账号</label>
       <BaseSelect v-model="accountId" :options="accounts" :disabled="editing || busy" placeholder="选择账号" />
-      <BaseSwitch v-model="enabled" label="启用保护" :disabled="busy" />
+      <BaseSwitch v-model="enabled" label="启用保护" show-label :disabled="busy" />
       <p v-if="!enabled" class="muted">
         关闭后解除本插件的拦截，保留当前周期阈值
       </p>

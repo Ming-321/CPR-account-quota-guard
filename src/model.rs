@@ -34,6 +34,7 @@ pub struct Guard {
     pub candidate: Option<Sample>,
     pub latest: Option<Sample>,
     pub observed_high_water: i64,
+    pub unconfirmed: bool,
     pub blocked: bool,
 }
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -56,6 +57,7 @@ impl Guard {
             candidate: None,
             latest: None,
             observed_high_water: 0,
+            unconfirmed: false,
             blocked: false,
         }
     }
@@ -81,6 +83,18 @@ impl Guard {
         self.candidate = None;
         self.current = self.configured.clone();
         self.threshold = Some(self.current.draw(draw));
+    }
+    fn retain_or_tighten(&mut self, sample: Sample) {
+        self.unconfirmed = true;
+        // 周期未知只阻止重抽和放宽，新用量增加仍能收紧保护
+        if self
+            .latest
+            .as_ref()
+            .is_none_or(|old| sample.used > old.used)
+        {
+            self.latest = Some(sample);
+            self.judge();
+        }
     }
     pub fn observe(&mut self, next: Sample, draw: &mut impl FnMut(u8, u8) -> u8) {
         if next.observed <= self.observed_high_water {
@@ -115,6 +129,7 @@ impl Guard {
                     }
                     // 新周期尚未确认，不能利用下降用量解除已有保护
                     if !stable {
+                        self.retain_or_tighten(next);
                         return;
                     }
                 }
@@ -125,10 +140,14 @@ impl Guard {
                         anchor.observed = next.observed;
                     }
                 }
-                Change::Unexplained => return,
+                Change::Unexplained => {
+                    self.retain_or_tighten(next);
+                    return;
+                }
             },
             None => {}
         }
+        self.unconfirmed = false;
         self.latest = Some(next);
         self.judge();
     }
@@ -147,7 +166,7 @@ impl Guard {
         }
     }
     pub fn reason(&self, now: i64) -> Option<&'static str> {
-        if self.candidate.is_some() {
+        if self.candidate.is_some() || self.unconfirmed {
             Some("等待确认新的周额度周期")
         } else if self.blocked
             && self

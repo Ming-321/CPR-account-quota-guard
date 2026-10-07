@@ -21,6 +21,9 @@
     "management": {}
   },
   "resources": {
+    "LICENSE": "text/plain",
+    "NOTICE": "text/plain",
+    "THIRD_PARTY_NOTICES": "text/plain",
     "web/index.html": "text/html",
     "web/app.js": "text/javascript",
     "web/app.css": "text/css"

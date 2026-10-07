@@ -167,3 +167,35 @@ fn invalid_configuration_and_quota() {
     facts.windows.push(facts.windows[0].clone());
     assert!(cycle::sample(&facts, "a", NOW).is_none());
 }
+
+#[test]
+fn uncertain_cycle_can_tighten_but_not_relax_protection() {
+    let mut g = fixed();
+    let reset = NOW + WEEK / 2;
+    g.observe(sample(NOW, reset, 80.0), &mut |_, _| panic!());
+    g.observe(sample(NOW + 1, reset + 600_000, 90.0), &mut |_, _| panic!());
+    assert!(
+        g.rejects(),
+        "a drifting reset must not hide increased weekly usage"
+    );
+    g.observe(sample(NOW + 2, reset + 900_000, 1.0), &mut |_, _| panic!());
+    assert!(
+        g.rejects(),
+        "unconfirmed cycle cannot relax the previous decision"
+    );
+    assert!(g.reason(NOW + 2).is_some());
+    let mut g = fixed();
+    g.observe(sample(NOW, reset, 80.0), &mut |_, _| panic!());
+    g.observe(
+        Sample {
+            observed: NOW + 1,
+            reset: None,
+            used: 95.0,
+        },
+        &mut |_, _| panic!(),
+    );
+    assert!(
+        g.rejects(),
+        "fixed protection does not require a reset timestamp"
+    );
+}
