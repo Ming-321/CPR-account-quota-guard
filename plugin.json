@@ -1,0 +1,40 @@
+{
+  "manifestVersion": 2,
+  "publisher": "ming321",
+  "name": "account-quota-guard",
+  "displayName": "账号额度保护",
+  "version": "0.1.0",
+  "description": "按账号周额度剩余阈值保护新请求",
+  "license": "Apache-2.0",
+  "engines": {
+    "codex-proxy-rs": ">=3.21.1, <4.0.0"
+  },
+  "runtime": "trustedProcess",
+  "main": "bin/account-quota-guard",
+  "contributes": {
+    "middleware": {
+      "version": 4,
+      "stages": [
+        "attempt"
+      ]
+    },
+    "management": {}
+  },
+  "resources": {
+    "web/index.html": "text/html",
+    "web/app.js": "text/javascript",
+    "web/app.css": "text/css"
+  },
+  "state": [
+    {
+      "namespace": "guard",
+      "schemaVersion": 1,
+      "schema": {
+        "type": "object"
+      },
+      "maximumRecords": 1,
+      "maximumBytes": 1048576,
+      "maximumValueBytes": 262144
+    }
+  ]
+}

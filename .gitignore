@@ -1,0 +1,6 @@
+/target/
+/dist/
+/frontend/node_modules/
+/frontend/dist/
+/validation/output/
+__pycache__/

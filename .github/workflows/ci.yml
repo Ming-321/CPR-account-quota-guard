@@ -1,0 +1,96 @@
+name: CI
+on:
+  push:
+    branches: [main, 'codex/**']
+    tags: ['v*']
+  pull_request:
+permissions:
+  contents: read
+env:
+  CARGO_NET_GIT_FETCH_WITH_CLI: true
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            artifact: linux-x86_64
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            artifact: linux-aarch64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.97.0
+        with:
+          components: rustfmt, clippy
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.6.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: cargo fmt --check
+      - run: cargo clippy --all-targets --locked -- -D warnings
+      - run: cargo test --locked
+      - run: pnpm --dir frontend install --frozen-lockfile
+      - run: pnpm --dir frontend lint
+      - run: pnpm --dir frontend test
+      - run: pnpm --dir frontend build
+      - run: cargo build --release --locked
+      - name: 构建固定版本打包工具
+        run: |
+          git init /tmp/cpr-sdk
+          git -C /tmp/cpr-sdk remote add origin https://github.com/zyycn/codex-proxy-rs.git
+          git -C /tmp/cpr-sdk fetch --depth 1 origin f174320e2ac8987578146d4684e69ad196db0286
+          git -C /tmp/cpr-sdk checkout --detach FETCH_HEAD
+          cargo build --manifest-path /tmp/cpr-sdk/backend/Cargo.toml -p codex-proxy-plugin-cli --locked
+      - run: /tmp/cpr-sdk/backend/target/debug/cpr-plugin package --manifest plugin.json --binary target/release/account-quota-guard --target ${{ matrix.target }} --resource-map web=frontend/dist --output-dir dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/*
+  check:
+    if: always()
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - run: test "$BUILD_RESULT" = success
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: check
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: linux-*
+          merge-multiple: true
+          path: dist
+      - name: 校验版本并发布不可覆盖附件
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          test "$RELEASE_TAG" = "v$(jq -r .version plugin.json)"
+          for target in x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu; do
+            archive="ming321.account-quota-guard-${RELEASE_TAG#v}-${target}.tar.gz"
+            test -s "dist/$archive"
+            test -s "dist/$archive.sha256"
+            (cd dist && sha256sum --check "$archive.sha256")
+          done
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo '发行已存在，不覆盖附件'
+            exit 1
+          fi
+          if [[ "$RELEASE_TAG" == *-* ]]; then
+            gh release create "$RELEASE_TAG" dist/* --title "$RELEASE_TAG" --notes-file release/notes.md --prerelease --latest=false --verify-tag
+          else
+            gh release create "$RELEASE_TAG" dist/* --title "$RELEASE_TAG" --notes-file release/notes.md --latest --verify-tag
+          fi

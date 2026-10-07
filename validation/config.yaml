@@ -1,0 +1,45 @@
+schema_version: 1
+host:
+  system_update:
+    executable_path: /official/codex-proxy-rs
+  timezone: UTC
+  listen:
+    host: 0.0.0.0
+    port: 9080
+  runtime_data_dir: /validation/runtime
+  logging:
+    level: info
+    stdout: true
+    oauth_recovery: false
+    request_dump: false
+    request_dump_retention_days: 1
+    file:
+      enabled: false
+      directory: ../.runtime/logs
+      retention_days: 7
+      max_file_size_mb: 20
+  drain_timeout_seconds: 30
+  worker_shutdown_timeout_seconds: 30
+store:
+  database:
+    url: postgres://quota_guard@quota-guard-pg:5432/quota_guard
+    password: '000000000000000000000000000000000000000000000001'
+  redis:
+    url: redis://quota-guard-redis:6379/
+    password: '000000000000000000000000000000000000000000000002'
+admin:
+  session_ttl_minutes: 10080
+  session_absolute_ttl_minutes: 43200
+  default_username: admin@quota.test
+  default_password: quota-guard-test-only
+client:
+  session_ttl_minutes: 1440
+api:
+  asset_directory: /official/web/dist
+  cors_allowed_origins: []
+  request_timeout_seconds: null
+  request_id_header: x-request-id
+openai:
+  residency: us
+  api:
+    base_url: http://127.0.0.1:9081/backend-api

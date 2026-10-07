@@ -1,0 +1,7 @@
+CPR 账号额度保护
+Copyright 2026 Ming-321
+
+周期识别参考 CPR-key-reset-follow（Ming-321，Apache-2.0）
+https://github.com/Ming-321/CPR-key-reset-follow/tree/3ccdb37740bc8d1019cebb54cf3cd99f1766edad
+复用了窗口时长、漂移容差与稳定观测的判断思路
+前端构建配置与宿主桥封装基于该项目
