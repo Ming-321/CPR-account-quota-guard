@@ -17,7 +17,7 @@
 
 ## 打包
 
-从官方 CPR 提交 `f174320e2ac8987578146d4684e69ad196db0286` 构建 `codex-proxy-plugin-cli`，使用生成的 `cpr-plugin`：
+从官方 CPR v3.29.1 提交 `743a3aba70a4f78f27fb53d80a6e719599d2fe5e` 构建 `codex-proxy-plugin-cli`，使用生成的 `cpr-plugin`：
 
 ```bash
 cpr-plugin package \
@@ -28,7 +28,7 @@ cpr-plugin package \
   --output-dir dist
 ```
 
-x86_64 在对应原生 Linux runner 构建，target 改为 `x86_64-unknown-linux-gnu`。CI 在两个架构上检查、测试和打包，版本 tag 通过后发布正式附件。
+x86_64 可通过相应交叉编译器构建，target 改为 `x86_64-unknown-linux-gnu`，不可只修改包标签。CI 保留原生双架构检查能力，改为手动触发；本地发布不触发 Actions，步骤见 [本地发布](local-release.md)。
 
 ## 隔离验证
 

@@ -3,22 +3,22 @@
   "publisher": "ming321",
   "name": "account-quota-guard",
   "displayName": "账号额度保护",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "按账号周额度剩余阈值保护新请求",
   "license": "Apache-2.0",
   "engines": {
-    "codex-proxy-rs": ">=3.21.1, <4.0.0"
+    "codex-proxy-rs": ">=3.29.0, <3.30.0"
   },
   "runtime": "trustedProcess",
   "main": "bin/account-quota-guard",
   "contributes": {
     "middleware": {
-      "version": 4,
+      "version": 5,
       "stages": [
         "attempt"
       ]
     },
-    "management": {}
+    "management": {"version": 2}
   },
   "resources": {
     "LICENSE": "text/plain",

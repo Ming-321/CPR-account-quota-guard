@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "account-quota-guard"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "gateway-plugin-sdk",
  "rand",
@@ -12,6 +12,12 @@ dependencies = [
  "serde_json",
  "tokio",
 ]
+
+[[package]]
+name = "base64"
+version = "0.23.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac07cdecf99051d9a5238b80f35af32cdeba5b336e55d957b318b50137e18da5"
 
 [[package]]
 name = "bytes"
@@ -28,8 +34,9 @@ checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
 [[package]]
 name = "gateway-plugin-sdk"
 version = "0.1.0"
-source = "git+https://github.com/zyycn/codex-proxy-rs?rev=f174320e2ac8987578146d4684e69ad196db0286#f174320e2ac8987578146d4684e69ad196db0286"
+source = "git+https://github.com/zyycn/codex-proxy-rs?rev=743a3aba70a4f78f27fb53d80a6e719599d2fe5e#743a3aba70a4f78f27fb53d80a6e719599d2fe5e"
 dependencies = [
+ "base64",
  "semver",
  "serde",
  "serde_json",
