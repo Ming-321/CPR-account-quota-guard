@@ -16,7 +16,7 @@
 
 ## 安装
 
-支持 **CPR >=3.34.0、<3.35.0**，SDK 与打包工具固定 v3.34.0。选择与 CPR 服务器架构对应的 Linux x86_64 或 ARM64 安装包。旧 CPR 请使用先前发布的兼容版本。
+支持 **CPR >=3.36.0、<3.37.0**，SDK 与打包工具固定 v3.36.0。选择与 CPR 服务器架构对应的 Linux x86_64 或 ARM64 安装包。旧 CPR 请使用先前发布的兼容版本。
 
 1. 从 [Releases](https://github.com/Ming-321/CPR-account-quota-guard/releases) 下载 `.tar.gz` 和对应 `.sha256`，校验后在 CPR 插件管理中上传安装
 2. CPR 会自动启用默认配置，安装后先停用；在绑定设置中把 **“插件失败时”改为“交给后续处理”**，保存后再启用
@@ -38,7 +38,7 @@
 
 ## 开发
 
-Rust 1.99.1、Node 24、pnpm 12.6.0。SDK 和打包 CLI 固定到 CPR v3.34.0，UI 使用官方 v0.3.0。
+Rust 1.99.1、Node 24、pnpm 12.6.0。SDK 和打包 CLI 固定到 CPR v3.36.0，UI 使用官方 v0.3.0。
 
 ```bash
 cargo test --locked
@@ -50,6 +50,6 @@ pnpm --dir frontend build
 cargo build --release --locked
 ```
 
-打包及隔离验证见 [开发说明](docs/development.md)。本版宿主安装与升级测试由使用者完成；先前版本的 v3.21.1 隔离验证不代表本版已在 v3.34.0 联调通过。本地发布步骤见 [本地发布](docs/local-release.md)。
+打包及隔离验证见 [开发说明](docs/development.md)。本版宿主安装与升级测试由使用者完成；先前版本的 v3.21.1 隔离验证不代表本版已在 v3.36.0 联调通过。本地发布步骤见 [本地发布](docs/local-release.md)。
 
 [Apache-2.0](LICENSE) · [复用说明](NOTICE)
