@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "account-quota-guard"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "gateway-plugin-sdk",
  "rand",
@@ -34,7 +34,7 @@ checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
 [[package]]
 name = "gateway-plugin-sdk"
 version = "0.1.0"
-source = "git+https://github.com/zyycn/codex-proxy-rs?rev=5ae38dc0c55c192815ef605dde6c05fd767a2c28#5ae38dc0c55c192815ef605dde6c05fd767a2c28"
+source = "git+https://github.com/zyycn/codex-proxy-rs?rev=641f43b3030b1c68961e05d525e58ec6f4264a15#641f43b3030b1c68961e05d525e58ec6f4264a15"
 dependencies = [
  "base64",
  "semver",
