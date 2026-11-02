@@ -17,7 +17,7 @@
 
 ## 打包
 
-从官方 CPR v3.37.2 提交 `641f43b3030b1c68961e05d525e58ec6f4264a15` 构建 `codex-proxy-plugin-cli`，使用生成的 `cpr-plugin`：
+从官方 CPR v3.38.2 提交 `7a32c6cec206939d6ecf97ea5d29fc1fdbeec3cf` 构建 `codex-proxy-plugin-cli`，使用生成的 `cpr-plugin`：
 
 ```bash
 cpr-plugin package \
